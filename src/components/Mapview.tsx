@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 
 function App() {
   const mapRef = useRef(null);
+  const mapInstance = useRef(null);
 
   useEffect(() => {
     const kakao = window.kakao;
@@ -13,7 +14,7 @@ function App() {
       level: 3, //
     };
 
-    const map = new kakao.maps.Map(container, options); // 지도 생성 및 객체 리턴
+    mapInstance.current = new kakao.maps.Map(container, options); // 지도 생성 및 객체 리턴
 
     if(navigator.geolocation){
       navigator.geolocation.getCurrentPosition(function(position){
@@ -41,7 +42,7 @@ function App() {
     function displayMarker(locPosition,message){
 
       const marker = new kakao.maps.Marker({
-        map: map,
+        map: mapInstance.current,
         position: locPosition
       });
 
@@ -55,16 +56,45 @@ function App() {
         removable: iwRemoveable
       });
 
-      infowindow.open(map,marker);
+      infowindow.open(mapInstance.current,marker);
 
-      map.setCenter(locPosition);
+      mapInstance.current.setCenter(locPosition);
     };
 
   }, []);
 
+
+
+  // 지도 사용자 컨트롤 버튼 생성 함수
+  function setMapType(type) {
+      if (!mapInstance.current) return;
+      
+      if (type === 'roadmap') {
+        mapInstance.current.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
+      } else {
+        mapInstance.current.setMapTypeId(kakao.maps.MapTypeId.HYBRID);
+      }
+    }
+
+    function zoomIn() {
+      if (!mapInstance.current) return;
+      mapInstance.current.setLevel(mapInstance.current.getLevel() - 1);
+    }
+
+    function zoomOut() {
+      if (!mapInstance.current) return;
+      mapInstance.current.setLevel(mapInstance.current.getLevel() + 1);
+    }
+
   return (
     <>
-      <div ref={mapRef} style={{ width: '100', height: '100vh' }}></div>
+      <div ref={mapRef} style={{ width: '100%', height: '100vh' }}></div>
+      <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <button onClick={() => setMapType('roadmap')}>로드맵</button>
+        <button onClick={() => setMapType('skyview')}>스카이뷰</button>
+        <button onClick={zoomIn}>확대</button>
+        <button onClick={zoomOut}>축소</button>
+      </div>
     </>
   );
 }
