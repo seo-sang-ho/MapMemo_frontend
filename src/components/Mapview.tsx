@@ -3,9 +3,10 @@ import { useEffect, useRef } from 'react';
 function App() {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
+  const kakao = window.kakao;
+
 
   useEffect(() => {
-    const kakao = window.kakao;
     const container = mapRef.current; // 지도를 담을 영역의 DOM 참조
 
     // 지도를 생성할 때 필요한 기본 옵션
@@ -16,6 +17,7 @@ function App() {
 
     mapInstance.current = new kakao.maps.Map(container, options); // 지도 생성 및 객체 리턴
 
+    // 현재 내 위치를 가져와 마커 표시
     if(navigator.geolocation){
       navigator.geolocation.getCurrentPosition(function(position){
 
@@ -31,12 +33,19 @@ function App() {
 
       // geolocation을 사용할 수 없을때 마커 표시 위치와 인포윈도우 내용 설정
     } else{
-
       const locPosition = new kakao.maps.LatLng(33.450701, 126.570667),
       message = 'geolacaiton을 사용할 수 없습니다.';
-
       displayMarker(locPosition,message);
     }
+
+    // 지도 클릭 시 이벤트 추가
+    kakao.maps.event.addListener(mapInstance.current,'click',function(mouseEvent){
+      const latlng = mouseEvent.latLng;
+      const message = prompt("이 위치에 남길 메모를 입력하세요");
+      if(message){
+        addMarker(latlng,message);
+      }
+    })
 
     // 지도에 마커와 인포윈도우 표시하는 함수
     function displayMarker(locPosition,message){
@@ -61,6 +70,21 @@ function App() {
       mapInstance.current.setCenter(locPosition);
     };
 
+    // 메모 마커 추가 함수
+    function addMarker(position,message){
+      const marker = new kakao.maps.Marker({
+        map: mapInstance.current,
+        position: position,
+      });
+
+      const infowindow = new kakao.maps.InfoWindow({
+        content: `<div style="padding:5px; color:black;">${message}</div>`,
+        removable: true,
+      });
+
+      infowindow.open(mapInstance.current, marker);
+    }
+
   }, []);
 
 
@@ -68,7 +92,7 @@ function App() {
   // 지도 사용자 컨트롤 버튼 생성 함수
   function setMapType(type) {
       if (!mapInstance.current) return;
-      
+
       if (type === 'roadmap') {
         mapInstance.current.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
       } else {
