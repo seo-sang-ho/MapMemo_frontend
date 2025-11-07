@@ -39,15 +39,34 @@ function App() {
       displayMarker(locPosition,message);
     }
 
-    // 
+    // 저장된 메모 불러와서 지도에 표시
+    axios.get("http://localhost:8080/api/memos").then((res) => {
+      res.data.forEach((memo)=>{
+        const pos = new kakao.maps.LatLng(memo.latitude,memo.longitude);
+        addMemoMarker(pos,memo.title,memo.content);
+      });
+    });
 
-    // 지도 클릭 시 이벤트 추가
-    kakao.maps.event.addListener(mapInstance.current,'click',function(mouseEvent){
-      const latlng = mouseEvent.latLng;
-      const message = prompt("이 위치에 남길 메모를 입력하세요");
-      if(message){
-        addMarker(latlng,message);
-      }
+    // 지도 클릭 시 새 메모 작성
+    kakao.maps.event.addListener(mapInstance.current,"click",async(MouseEvent)=>{
+      const latlng = MouseEvent.latLng;
+
+      const title = prompt("메모 제목을 입력하세요:");
+      if(!title) return;
+
+      const content = prompt("메모 내용을 입력하세요:");
+      if(!content) return;
+
+      const newMemo = {
+        title,
+        content,
+        latitude: latlng.getLat(),
+        longtitude: latlng.getLng(),
+      };
+
+      await axios.post("http://localhost:8080/api/memos",newMemo);
+
+      addMemoMarker(latlng,title,content);
     })
 
     // 지도에 마커와 인포윈도우 표시하는 함수
@@ -58,14 +77,10 @@ function App() {
         position: locPosition
       });
 
-      // 인포윈도우에 표시할 내용
-      const iwContent = message, 
-            iwRemoveable = true;
-
       // 인포윈도우 생성
       const infowindow = new kakao.maps.InfoWindow({
-        content: iwContent,
-        removable: iwRemoveable
+        content: message,
+        removable: true,
       });
 
       infowindow.open(mapInstance.current,marker);
@@ -74,14 +89,14 @@ function App() {
     };
 
     // 메모 마커 추가 함수
-    function addMarker(position,message){
+    function addMemoMarker(position,title,content){
       const marker = new kakao.maps.Marker({
         map: mapInstance.current,
         position: position,
       });
 
       const infowindow = new kakao.maps.InfoWindow({
-        content: `<div style="padding:5px; color:black;">${message}</div>`,
+        content: `<div style="padding:5px; color:black;">${title}</b><br/>${content}</div>`,
         removable: true,
       });
 
