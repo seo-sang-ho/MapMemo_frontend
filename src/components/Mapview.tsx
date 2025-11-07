@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useEffect, useRef } from 'react';
 
 function App() {
@@ -25,7 +26,7 @@ function App() {
       const lon = position.coords.longitude;
 
       const locPosition = new kakao.maps.LatLng(lat,lon),
-      message = '<div style="padding:5px; color:black">현재 위치</div>';
+      const message = '<div style="padding:5px; color:black">현재 위치</div>';
 
       displayMarker(locPosition,message);
 
@@ -37,6 +38,8 @@ function App() {
       message = 'geolacaiton을 사용할 수 없습니다.';
       displayMarker(locPosition,message);
     }
+
+    // 
 
     // 지도 클릭 시 이벤트 추가
     kakao.maps.event.addListener(mapInstance.current,'click',function(mouseEvent){
