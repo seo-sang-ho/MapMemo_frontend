@@ -8,6 +8,7 @@ function App() {
 
 
   useEffect(() => {
+    window.kakao.maps.load(() => {
     const container = mapRef.current; // 지도를 담을 영역의 DOM 참조
 
     // 지도를 생성할 때 필요한 기본 옵션
@@ -25,7 +26,7 @@ function App() {
       const lat = position.coords.latitude;
       const lon = position.coords.longitude;
 
-      const locPosition = new kakao.maps.LatLng(lat,lon),
+      const locPosition = new kakao.maps.LatLng(lat,lon);
       const message = '<div style="padding:5px; color:black">현재 위치</div>';
 
       displayMarker(locPosition,message);
@@ -61,7 +62,7 @@ function App() {
         title,
         content,
         latitude: latlng.getLat(),
-        longtitude: latlng.getLng(),
+        longitude: latlng.getLng(),
       };
 
       await axios.post("http://localhost:8080/api/memos",newMemo);
@@ -102,10 +103,9 @@ function App() {
 
       infowindow.open(mapInstance.current, marker);
     }
+  });
 
   }, []);
-
-
 
   // 지도 사용자 컨트롤 버튼 생성 함수
   function setMapType(type) {
