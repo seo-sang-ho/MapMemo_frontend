@@ -9,6 +9,7 @@ function App() {
 
   useEffect(() => {
     window.kakao.maps.load(() => {
+      if(mapInstance.current) return;
     const container = mapRef.current; // 지도를 담을 영역의 DOM 참조
 
     // 지도를 생성할 때 필요한 기본 옵션
