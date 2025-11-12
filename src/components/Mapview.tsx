@@ -1,140 +1,124 @@
-import axios from 'axios';
-import { useEffect, useRef } from 'react';
+import axios from "axios";
+import { useEffect, useRef } from "react";
 
 function App() {
-  const mapRef = useRef(null);
-  const mapInstance = useRef(null);
-  const kakao = window.kakao;
-
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const mapInstance = useRef<naver.maps.Map | null>(null);
 
   useEffect(() => {
-    window.kakao.maps.load(() => {
-      if(mapInstance.current) return;
-    const container = mapRef.current; // 지도를 담을 영역의 DOM 참조
-
-    // 지도를 생성할 때 필요한 기본 옵션
-    const options = {
-      center: new kakao.maps.LatLng(33.450701, 126.570667), // 지도의 중심좌표.
-      level: 3, //
-    };
-
-    mapInstance.current = new kakao.maps.Map(container, options); // 지도 생성 및 객체 리턴
-
-    // 현재 내 위치를 가져와 마커 표시
-    if(navigator.geolocation){
-      navigator.geolocation.getCurrentPosition(function(position){
-
-      const lat = position.coords.latitude;
-      const lon = position.coords.longitude;
-
-      const locPosition = new kakao.maps.LatLng(lat,lon);
-      const message = '<div style="padding:5px; color:black">현재 위치</div>';
-
-      displayMarker(locPosition,message);
-
-      });
-
-      // geolocation을 사용할 수 없을때 마커 표시 위치와 인포윈도우 내용 설정
-    } else{
-      const locPosition = new kakao.maps.LatLng(33.450701, 126.570667),
-      message = 'geolacaiton을 사용할 수 없습니다.';
-      displayMarker(locPosition,message);
+    if (!window.naver) {
+      console.error("네이버 지도 스크립트가 로드되지 않았습니다.");
+      return;
     }
 
-    // 저장된 메모 불러와서 지도에 표시
+    // 기본 지도 옵션
+    const mapOptions: naver.maps.MapOptions = {
+      center: new naver.maps.LatLng(37.5665, 126.9780), // 서울시청
+      zoom: 14,
+    };
+
+    mapInstance.current = new naver.maps.Map(mapRef.current!, mapOptions);
+
+    // 현재 위치 가져오기
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const userPos = new naver.maps.LatLng(latitude, longitude);
+
+          new naver.maps.Marker({
+            position: userPos,
+            map: mapInstance.current!,
+          });
+
+          mapInstance.current!.setCenter(userPos);
+        },
+        (err) => {
+          console.warn("현재 위치를 불러올 수 없습니다:", err);
+        }
+      );
+    }
+
+    // 서버에서 저장된 메모 불러오기
     axios.get("http://localhost:8080/api/memos").then((res) => {
-      res.data.forEach((memo)=>{
-        const pos = new kakao.maps.LatLng(memo.latitude,memo.longitude);
-        addMemoMarker(pos,memo.title,memo.content);
+      res.data.forEach((memo: any) => {
+        const pos = new naver.maps.LatLng(memo.latitude, memo.longitude);
+        addMemoMarker(pos, memo.title, memo.content);
       });
     });
 
-    // 지도 클릭 시 새 메모 작성
-    kakao.maps.event.addListener(mapInstance.current,"click",async(MouseEvent)=>{
-      const latlng = MouseEvent.latLng;
+    // 지도 클릭 이벤트 → 메모 생성
+    naver.maps.Event.addListener(mapInstance.current!, "click", async (e: any) => {
+      const latlng = e.coord;
 
       const title = prompt("메모 제목을 입력하세요:");
-      if(!title) return;
+      if (!title) return;
 
       const content = prompt("메모 내용을 입력하세요:");
-      if(!content) return;
+      if (!content) return;
 
       const newMemo = {
         title,
         content,
-        latitude: latlng.getLat(),
-        longitude: latlng.getLng(),
+        latitude: latlng.lat(),
+        longitude: latlng.lng(),
       };
 
-      await axios.post("http://localhost:8080/api/memos",newMemo);
+      await axios.post("http://localhost:8080/api/memos", newMemo);
+      addMemoMarker(latlng, title, content);
+    });
 
-      addMemoMarker(latlng,title,content);
-    })
-
-    // 지도에 마커와 인포윈도우 표시하는 함수
-    function displayMarker(locPosition,message){
-
-      const marker = new kakao.maps.Marker({
-        map: mapInstance.current,
-        position: locPosition
+    // 메모 마커 + 정보창 표시 함수
+    function addMemoMarker(position: naver.maps.LatLng, title: string, content: string) {
+      const marker = new naver.maps.Marker({
+        position,
+        map: mapInstance.current!,
       });
 
-      // 인포윈도우 생성
-      const infowindow = new kakao.maps.InfoWindow({
-        content: message,
-        removable: true,
+      const infoWindow = new naver.maps.InfoWindow({
+        content: `<div style="padding:8px; min-width:150px; color:black;">
+                    <b>${title}</b><br/>${content}
+                  </div>`,
       });
 
-      infowindow.open(mapInstance.current,marker);
-
-      mapInstance.current.setCenter(locPosition);
-    };
-
-    // 메모 마커 추가 함수
-    function addMemoMarker(position,title,content){
-      const marker = new kakao.maps.Marker({
-        map: mapInstance.current,
-        position: position,
+      naver.maps.Event.addListener(marker, "click", () => {
+        infoWindow.open(mapInstance.current!, marker);
       });
-
-      const infowindow = new kakao.maps.InfoWindow({
-        content: `<div style="padding:5px; color:black;">${title}</b><br/>${content}</div>`,
-        removable: true,
-      });
-
-      infowindow.open(mapInstance.current, marker);
     }
-  });
-
   }, []);
 
-  // 지도 사용자 컨트롤 버튼 생성 함수
-  function setMapType(type) {
-      if (!mapInstance.current) return;
-
-      if (type === 'roadmap') {
-        mapInstance.current.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
-      } else {
-        mapInstance.current.setMapTypeId(kakao.maps.MapTypeId.HYBRID);
-      }
+  // 지도 확대/축소 함수
+  const zoomIn = () => {
+    if (mapInstance.current) {
+      const zoom = mapInstance.current.getZoom();
+      mapInstance.current.setZoom(zoom + 1);
     }
+  };
 
-    function zoomIn() {
-      if (!mapInstance.current) return;
-      mapInstance.current.setLevel(mapInstance.current.getLevel() - 1);
+  const zoomOut = () => {
+    if (mapInstance.current) {
+      const zoom = mapInstance.current.getZoom();
+      mapInstance.current.setZoom(zoom - 1);
     }
-
-    function zoomOut() {
-      if (!mapInstance.current) return;
-      mapInstance.current.setLevel(mapInstance.current.getLevel() + 1);
-    }
+  };
 
   return (
     <>
-      <div ref={mapRef} style={{ width: '100%', height: '100vh' }}></div>
-      <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <button onClick={() => setMapType('roadmap')}>로드맵</button>
-        <button onClick={() => setMapType('skyview')}>스카이뷰</button>
+      <div
+        ref={mapRef}
+        style={{ width: "100%", height: "100vh" }}
+      ></div>
+      <div
+        style={{
+          position: "absolute",
+          top: 20,
+          right: 20,
+          zIndex: 10,
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+        }}
+      >
         <button onClick={zoomIn}>확대</button>
         <button onClick={zoomOut}>축소</button>
       </div>
