@@ -5,6 +5,7 @@ import MarkerListPanel from "./components/MarkerListPanel";
 interface Marker{
   title: string;
   content: string;
+  category: string;
   lat: number;
   lng: number;
 }

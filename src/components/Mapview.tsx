@@ -1,11 +1,13 @@
 import axios from "axios";4
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface Markerdata{
   title: string;
   content: string;
+  category: string;
   lat: number;
   lng: number;
+
 }
 
 interface MapViewProps {
@@ -57,7 +59,7 @@ function MapView({ onMarkersChange, mapRef }: MapViewProps) {
     axios.get("http://localhost:8080/api/memos").then((res) => {
       res.data.forEach((memo: any) => {
         const pos = new naver.maps.LatLng(memo.latitude, memo.longitude);
-        addMemoMarker(pos, memo.title, memo.content);
+        addMemoMarker(pos, memo.title, memo.content, memo.category);
       });
     });
 
@@ -71,9 +73,13 @@ function MapView({ onMarkersChange, mapRef }: MapViewProps) {
       const content = prompt("메모 내용을 입력하세요:");
       if (!content) return;
 
+      const category = prompt("종류를 입력하세요: 'TOILET', 'STORE', 'ETC'");
+      if (!category) return;
+
       const newMemo = {
         title,
         content,
+        category,
         latitude: latlng.lat(),
         longitude: latlng.lng(),
       };
@@ -83,12 +89,13 @@ function MapView({ onMarkersChange, mapRef }: MapViewProps) {
     });
 
     // 메모 마커 + 정보창 표시 함수
-    function addMemoMarker(position: naver.maps.LatLng, title: string, content: string) {
+    function addMemoMarker(position: naver.maps.LatLng, title: string, content: string, category: string) {
       const marker = new naver.maps.Marker({position, map });
 
       const infoWindow = new naver.maps.InfoWindow({
         content: `<div style="padding:8px; min-width:150px; color:black;">
-                    <b>${title}</b><br/>${content}
+                    <b>${title}</b><br/>${content}<br/>
+                    <small style="color: gray;">[${category}]</small>
                   </div>`,
       });
 
@@ -100,6 +107,7 @@ function MapView({ onMarkersChange, mapRef }: MapViewProps) {
       const newMarker: MarkerData = {
         title,
         content,
+        category,
         lat: position.lat(),
         lng: position.lng(),
       };
@@ -109,15 +117,12 @@ function MapView({ onMarkersChange, mapRef }: MapViewProps) {
       // 상위로 전달
       if(onMarkersChange) onMarkersChange([...markersRef.current]);
     }
-  }, [onMarkersChange, mapRef]);
+  }, [onMarkersChange , mapRef]);
 
 
   return (
     <>
-      <div
-        ref={divRef}
-        style={{ width: "100%", height: "100vh" }}
-      ></div>
+      <div ref={divRef} style={{ width: "100%", height: "100vh" }}> </div>
     </>
   );
 }

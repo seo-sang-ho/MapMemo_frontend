@@ -67,6 +67,8 @@ function MarkerListPanel({ markers, onMarkerClick }: MarkerListPanelProps) {
                     </b>
                 
                 <small style={{ color: "black" }}>{m.content}</small>
+                <br/>
+                <small style={{color: "black"}}>{m.category}</small>
               </div>
             ))
           )}
