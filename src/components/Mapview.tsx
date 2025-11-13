@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "axios";4
 import { useEffect, useRef } from "react";
 
 function App() {
@@ -15,6 +15,11 @@ function App() {
     const mapOptions: naver.maps.MapOptions = {
       center: new naver.maps.LatLng(37.5665, 126.9780), // 서울시청
       zoom: 14,
+      zoomControl: true,
+      zoomControlOptions:{
+        style: naver.maps.ZoomControlStyle.SMALL,
+        position: naver.maps.Position.TOP_RIGHT
+      }
     };
 
     mapInstance.current = new naver.maps.Map(mapRef.current!, mapOptions);
@@ -108,20 +113,6 @@ function App() {
         ref={mapRef}
         style={{ width: "100%", height: "100vh" }}
       ></div>
-      <div
-        style={{
-          position: "absolute",
-          top: 20,
-          right: 20,
-          zIndex: 10,
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-        }}
-      >
-        <button onClick={zoomIn}>확대</button>
-        <button onClick={zoomOut}>축소</button>
-      </div>
     </>
   );
 }
