@@ -1,15 +1,11 @@
 import { useState } from "react";
 
 interface MarkerListPanelProps {
-  markers: {
-    title: string;
-    content: string;
-    lat: number;
-    lng: number;
-  }[];
+  markers: MarkerData[];
+  onMarkerClick?: (lat: number, lng: number) => void;
 }
 
-function MarkerListPanel({ markers }: MarkerListPanelProps) {
+function MarkerListPanel({ markers, onMarkerClick }: MarkerListPanelProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -56,15 +52,21 @@ function MarkerListPanel({ markers }: MarkerListPanelProps) {
             zIndex: 20,
           }}
         >
-          <h4 style={{ textAlign: "center", marginBottom: "8px" }}>📍 현재 마커 목록</h4>
+          <h4 style={{ textAlign: "center",color:"black" ,marginBottom: "8px" }}>📍 현재 마커 목록</h4>
           {markers.length === 0 ? (
             <p style={{ textAlign: "center", color: "#666" }}>표시된 마커가 없습니다.</p>
           ) : (
             markers.map((m, idx) => (
-              <div key={idx} style={{ borderBottom: "1px solid #eee", padding: "6px 0" }}>
-                <b>{m.title}</b>
-                <br />
-                <small style={{ color: "#555" }}>{m.content}</small>
+              <div 
+                    key={idx} 
+                    style={{ borderBottom: "1px solid #eee", padding: "6px 0", cursor: "pointer" }}
+                    onClick={() => onMarkerClick && onMarkerClick(m.lat, m.lng)}
+                    >
+                <b>
+                    <div style={{color:"black"}}>{m.title}</div>
+                    </b>
+                
+                <small style={{ color: "black" }}>{m.content}</small>
               </div>
             ))
           )}

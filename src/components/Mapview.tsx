@@ -1,14 +1,22 @@
 import axios from "axios";4
 import { useEffect, useRef } from "react";
 
-interface MapViewProps {
-  onMarkersChange?: (markers: any[]) => void; // 상위 컴포넌트(App)에 마커 정보 전달
+export interface Markerdata{
+  title: string;
+  content: string;
+  lat: number;
+  lng: number;
 }
 
-function MapView({ onMarkersChange }: MapViewProps) {
-  const mapRef = useRef<HTMLDivElement | null>(null);
-  const mapInstance = useRef<naver.maps.Map | null>(null);
-  const markersRef = useRef<any[]>([]); // 지도 위의 마커 정보들
+interface MapViewProps {
+  onMarkersChange?: (markers: any[]) => void; // 상위 컴포넌트(App)에 마커 정보 전달
+  mapRef?: React.RefObject<naver.maps.Map>;
+}
+
+function MapView({ onMarkersChange, mapRef }: MapViewProps) {
+  const divRef = useRef<HTMLDivElement | null>(null); // 지도 div용
+  const internalMapRef = useRef<naver.maps.Map | null>(null);
+  const markersRef = useRef<MarkerData[]>([]);
 
   useEffect(() => {
     if (!window.naver) {
@@ -23,29 +31,25 @@ function MapView({ onMarkersChange }: MapViewProps) {
       zoomControl: true,
       zoomControlOptions:{
         style: naver.maps.ZoomControlStyle.SMALL,
-        position: naver.maps.Position.TOP_RIGHT
+        position: naver.maps.Position.RIGHT_BOTTOM
       }
     };
 
-    mapInstance.current = new naver.maps.Map(mapRef.current!, mapOptions);
+    // 지도 객체 생성
+    internalMapRef.current = new naver.maps.Map(divRef.current!, mapOptions);
+    if (mapRef) mapRef.current = internalMapRef.current;
+
+    const map = internalMapRef.current;
 
     // 현재 위치 가져오기
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude, longitude } = position.coords;
-          const userPos = new naver.maps.LatLng(latitude, longitude);
-
-          new naver.maps.Marker({
-            position: userPos,
-            map: mapInstance.current!,
-          });
-
-          mapInstance.current!.setCenter(userPos);
+          const userPos = new naver.maps.LatLng(position.coords.latitude, position.coords.longitude);
+          new naver.maps.Marker({ position: userPos, map});
+          map.setCenter(userPos);
         },
-        (err) => {
-          console.warn("현재 위치를 불러올 수 없습니다:", err);
-        }
+        (err) => console.warn("현재 위치를 불러올 수 없습니다:", err)
       );
     }
 
@@ -58,7 +62,7 @@ function MapView({ onMarkersChange }: MapViewProps) {
     });
 
     // 지도 클릭 이벤트 → 메모 생성
-    naver.maps.Event.addListener(mapInstance.current!, "click", async (e: any) => {
+    naver.maps.Event.addListener(map, "click", async (e: any) => {
       const latlng = e.coord;
 
       const title = prompt("메모 제목을 입력하세요:");
@@ -80,10 +84,7 @@ function MapView({ onMarkersChange }: MapViewProps) {
 
     // 메모 마커 + 정보창 표시 함수
     function addMemoMarker(position: naver.maps.LatLng, title: string, content: string) {
-      const marker = new naver.maps.Marker({
-        position,
-        map: mapInstance.current!,
-      });
+      const marker = new naver.maps.Marker({position, map });
 
       const infoWindow = new naver.maps.InfoWindow({
         content: `<div style="padding:8px; min-width:150px; color:black;">
@@ -93,29 +94,28 @@ function MapView({ onMarkersChange }: MapViewProps) {
 
       // 마커 클릭 시 정보 표시
       naver.maps.Event.addListener(marker, "click", () => {
-        infoWindow.open(mapInstance.current!, marker);
+        infoWindow.open(map, marker);
       });
 
-      // 현재 지도에 있는 마커 리스트 갱신
-      markersRef.current.push({
+      const newMarker: MarkerData = {
         title,
         content,
         lat: position.lat(),
         lng: position.lng(),
-      });
+      };
+
+      markersRef.current.push(newMarker);
 
       // 상위로 전달
-      if(onMarkersChange){
-        onMarkersChange([...markersRef.current]);
-      }
+      if(onMarkersChange) onMarkersChange([...markersRef.current]);
     }
-  }, [onMarkersChange]);
+  }, [onMarkersChange, mapRef]);
 
 
   return (
     <>
       <div
-        ref={mapRef}
+        ref={divRef}
         style={{ width: "100%", height: "100vh" }}
       ></div>
     </>
