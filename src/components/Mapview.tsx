@@ -14,7 +14,7 @@ function App() {
     // 기본 지도 옵션
     const mapOptions: naver.maps.MapOptions = {
       center: new naver.maps.LatLng(37.5665, 126.9780), // 서울시청
-      zoom: 14,
+      zoom: 16,
       zoomControl: true,
       zoomControlOptions:{
         style: naver.maps.ZoomControlStyle.SMALL,
