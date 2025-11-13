@@ -1,9 +1,14 @@
 import axios from "axios";4
 import { useEffect, useRef } from "react";
 
-function App() {
+interface MapViewProps {
+  onMarkersChange?: (markers: any[]) => void; // 상위 컴포넌트(App)에 마커 정보 전달
+}
+
+function MapView({ onMarkersChange }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<naver.maps.Map | null>(null);
+  const markersRef = useRef<any[]>([]); // 지도 위의 마커 정보들
 
   useEffect(() => {
     if (!window.naver) {
@@ -86,26 +91,26 @@ function App() {
                   </div>`,
       });
 
+      // 마커 클릭 시 정보 표시
       naver.maps.Event.addListener(marker, "click", () => {
         infoWindow.open(mapInstance.current!, marker);
       });
-    }
-  }, []);
 
-  // 지도 확대/축소 함수
-  const zoomIn = () => {
-    if (mapInstance.current) {
-      const zoom = mapInstance.current.getZoom();
-      mapInstance.current.setZoom(zoom + 1);
-    }
-  };
+      // 현재 지도에 있는 마커 리스트 갱신
+      markersRef.current.push({
+        title,
+        content,
+        lat: position.lat(),
+        lng: position.lng(),
+      });
 
-  const zoomOut = () => {
-    if (mapInstance.current) {
-      const zoom = mapInstance.current.getZoom();
-      mapInstance.current.setZoom(zoom - 1);
+      // 상위로 전달
+      if(onMarkersChange){
+        onMarkersChange([...markersRef.current]);
+      }
     }
-  };
+  }, [onMarkersChange]);
+
 
   return (
     <>
@@ -117,4 +122,4 @@ function App() {
   );
 }
 
-export default App;
+export default MapView;
