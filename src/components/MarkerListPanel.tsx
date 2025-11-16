@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 interface MarkerListPanelProps {
-  markers: MarkerData[];
+  markers: Markerdata[];
   onMarkerClick?: (lat: number, lng: number) => void;
 }
 

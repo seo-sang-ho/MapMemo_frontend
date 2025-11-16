@@ -18,7 +18,7 @@ interface MapViewProps {
 function MapView({ onMarkersChange, mapRef }: MapViewProps) {
   const divRef = useRef<HTMLDivElement | null>(null); // 지도 div용
   const internalMapRef = useRef<naver.maps.Map | null>(null);
-  const markersRef = useRef<MarkerData[]>([]);
+  const markersRef = useRef<Markerdata[]>([]);
 
   useEffect(() => {
     if (!window.naver) {
@@ -104,7 +104,7 @@ function MapView({ onMarkersChange, mapRef }: MapViewProps) {
         infoWindow.open(map, marker);
       });
 
-      const newMarker: MarkerData = {
+      const newMarker: Markerdata = {
         title,
         content,
         category,
