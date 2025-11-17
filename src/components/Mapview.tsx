@@ -2,6 +2,7 @@ import axios from "axios";4
 import { useEffect, useRef, useState } from "react";
 
 export interface Markerdata{
+  id: number;
   title: string;
   content: string;
   category: string;
@@ -13,12 +14,13 @@ export interface Markerdata{
 interface MapViewProps {
   onMarkersChange?: (markers: any[]) => void; // 상위 컴포넌트(App)에 마커 정보 전달
   mapRef?: React.RefObject<naver.maps.Map>;
+  removeMarkerTrigger?: number; // 삭제
 }
 
-function MapView({ onMarkersChange, mapRef }: MapViewProps) {
+function MapView({ onMarkersChange, mapRef, removeMarkerTrigger }: MapViewProps) {
   const divRef = useRef<HTMLDivElement | null>(null); // 지도 div용
   const internalMapRef = useRef<naver.maps.Map | null>(null);
-  const markersRef = useRef<Markerdata[]>([]);
+  const markerObjsRef = useRef<{ data: Markerdata; marker: naver.maps.Marker; infoWindow: naver.maps.InfoWindow}[]>([])
 
   useEffect(() => {
     if (!window.naver) {
@@ -59,7 +61,7 @@ function MapView({ onMarkersChange, mapRef }: MapViewProps) {
     axios.get("http://localhost:8080/api/memos").then((res) => {
       res.data.forEach((memo: any) => {
         const pos = new naver.maps.LatLng(memo.latitude, memo.longitude);
-        addMemoMarker(pos, memo.title, memo.content, memo.category);
+        addMemoMarker({...memo, lat: memo.latitude, lng: memo.longitude });
       });
     });
 
@@ -84,41 +86,41 @@ function MapView({ onMarkersChange, mapRef }: MapViewProps) {
         longitude: latlng.lng(),
       };
 
-      await axios.post("http://localhost:8080/api/memos", newMemo);
-      addMemoMarker(latlng, title, content);
+      const res = await axios.post("http://localhost:8080/api/memos", newMemo);
+      addMemoMarker({ ...newMemo, id: res.data.id, lat: latlng.lat(), lng: latlng.lng() });
     });
 
     // 메모 마커 + 정보창 표시 함수
-    function addMemoMarker(position: naver.maps.LatLng, title: string, content: string, category: string) {
-      const marker = new naver.maps.Marker({position, map });
+    function addMemoMarker(markerData : Markerdata) {
+      const marker = new naver.maps.Marker({ position: new naver.maps.LatLng(markerData.lat, markerData.lng), map });
 
       const infoWindow = new naver.maps.InfoWindow({
         content: `<div style="padding:8px; min-width:150px; color:black;">
-                    <b>${title}</b><br/>${content}<br/>
-                    <small style="color: gray;">[${category}]</small>
+                    <b>${markerData.title}</b><br/>${markerData.content}<br/>
+                    <small style="color: gray;">[${markerData.category}]</small>
                   </div>`,
       });
 
       // 마커 클릭 시 정보 표시
-      naver.maps.Event.addListener(marker, "click", () => {
-        infoWindow.open(map, marker);
-      });
+      naver.maps.Event.addListener(marker, "click", () => infoWindow.open(map, marker)); 
+      markerObjsRef.current.push({ data: markerData, marker, infoWindow });
 
-      const newMarker: Markerdata = {
-        title,
-        content,
-        category,
-        lat: position.lat(),
-        lng: position.lng(),
-      };
-
-      markersRef.current.push(newMarker);
-
-      // 상위로 전달
-      if(onMarkersChange) onMarkersChange([...markersRef.current]);
+      if (onMarkersChange) onMarkersChange(markerObjsRef.current.map((obj) => obj.data));
     }
-  }, [onMarkersChange , mapRef]);
+  }, [onMarkersChange, mapRef]);
 
+    // 삭제 요청 반영
+      useEffect(() => {
+        if (!removeMarkerTrigger) return;
+
+        const toRemove = markerObjsRef.current.find((obj) => obj.data.id === removeMarkerTrigger);
+        if (toRemove) {
+          toRemove.marker.setMap(null); // 지도에서 제거
+          toRemove.infoWindow.close(); // 정보창 닫기
+          markerObjsRef.current = markerObjsRef.current.filter((obj) => obj.data.id !== removeMarkerTrigger);
+          if (onMarkersChange) onMarkersChange(markerObjsRef.current.map((obj) => obj.data));
+        }
+      }, [removeMarkerTrigger, onMarkersChange]);
 
   return (
     <>

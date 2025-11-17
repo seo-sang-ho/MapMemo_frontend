@@ -3,9 +3,10 @@ import { useState } from "react";
 interface MarkerListPanelProps {
   markers: Markerdata[];
   onMarkerClick?: (lat: number, lng: number) => void;
+  onDeleteMarker?: (id: number) => void;
 }
 
-function MarkerListPanel({ markers, onMarkerClick }: MarkerListPanelProps) {
+function MarkerListPanel({ markers, onMarkerClick, onDeleteMarker }: MarkerListPanelProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -50,25 +51,25 @@ function MarkerListPanel({ markers, onMarkerClick }: MarkerListPanelProps) {
             boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
             padding: "10px",
             zIndex: 20,
+            color: "black"
           }}
         >
           <h4 style={{ textAlign: "center",color:"black" ,marginBottom: "8px" }}>📍 현재 마커 목록</h4>
           {markers.length === 0 ? (
             <p style={{ textAlign: "center", color: "#666" }}>표시된 마커가 없습니다.</p>
           ) : (
-            markers.map((m, idx) => (
-              <div 
-                    key={idx} 
-                    style={{ borderBottom: "1px solid #eee", padding: "6px 0", cursor: "pointer" }}
-                    onClick={() => onMarkerClick && onMarkerClick(m.lat, m.lng)}
-                    >
-                <b>
-                    <div style={{color:"black"}}>{m.title}</div>
-                    </b>
-                
-                <small style={{ color: "black" }}>{m.content}</small>
-                <br/>
-                <small style={{color: "black"}}>{m.category}</small>
+            markers.map((m) => (
+              <div key={m.id} style={{ borderBottom: "1px solid #eee", padding: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div onClick={() => onMarkerClick?.(m.lat, m.lng)} style={{ cursor: "pointer" }}>
+                  <b>{m.title}</b>
+                  <br />
+                  <small>{m.content}</small>
+                  <br />
+                  <small>{m.category}</small>
+                </div>
+                <button onClick={() => onDeleteMarker?.(m.id)} style={{ color: "black", backgroundColor: "red", border: "none", borderRadius: 4, cursor: "pointer" }}>
+                  삭제
+                </button>
               </div>
             ))
           )}
