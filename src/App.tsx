@@ -3,14 +3,6 @@ import MapView, { type Markerdata }  from "./components/Mapview"
 import MarkerListPanel from "./components/MarkerListPanel";
 import axios from "axios";
 
-interface Marker{
-  title: string;
-  content: string;
-  category: string;
-  lat: number;
-  lng: number;
-}
-
 function App() {
   const [markers, setMarkers] = useState<Markerdata[]>([]);
   const [deleteId, setDeleteId] = useState<number | null>(null);

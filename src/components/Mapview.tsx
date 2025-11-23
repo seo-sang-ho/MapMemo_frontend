@@ -1,5 +1,5 @@
 import axios from "axios";4
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 export interface Markerdata{
   id: number;
@@ -13,8 +13,8 @@ export interface Markerdata{
 
 interface MapViewProps {
   onMarkersChange?: (markers: any[]) => void; // 상위 컴포넌트(App)에 마커 정보 전달
-  mapRef?: React.RefObject<naver.maps.Map>;
-  removeMarkerTrigger?: number; // 삭제
+  mapRef?: React.RefObject<naver.maps.Map | null>;
+  removeMarkerTrigger?: number | null; // 삭제
 }
 
 function MapView({ onMarkersChange, mapRef, removeMarkerTrigger }: MapViewProps) {
@@ -60,7 +60,6 @@ function MapView({ onMarkersChange, mapRef, removeMarkerTrigger }: MapViewProps)
     // 서버에서 저장된 메모 불러오기
     axios.get("http://localhost:8080/api/memos").then((res) => {
       res.data.forEach((memo: any) => {
-        const pos = new naver.maps.LatLng(memo.latitude, memo.longitude);
         addMemoMarker({...memo, lat: memo.latitude, lng: memo.longitude });
       });
     });
