@@ -8,7 +8,6 @@ export interface Markerdata{
   category: string;
   lat: number;
   lng: number;
-
 }
 
 interface MapViewProps {
@@ -35,7 +34,7 @@ function MapView({ onMarkersChange, mapRef, removeMarkerTrigger }: MapViewProps)
       zoomControl: true,
       zoomControlOptions:{
         style: naver.maps.ZoomControlStyle.SMALL,
-        position: naver.maps.Position.RIGHT_BOTTOM
+        position: naver.maps.Position.TOP_RIGHT
       }
     };
 
@@ -123,7 +122,7 @@ function MapView({ onMarkersChange, mapRef, removeMarkerTrigger }: MapViewProps)
 
   return (
     <>
-      <div ref={divRef} style={{ width: "100%", height: "100vh" }}> </div>
+      <div ref={divRef} style={{ width: "100%", height: "100%" }}> </div>
     </>
   );
 }

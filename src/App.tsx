@@ -34,15 +34,65 @@ function App() {
   };
 
   return (
-    <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
-      {/* 지도 */}
-      <MapView onMarkersChange={setMarkers} mapRef={mapRef} removeMarkerTrigger={deleteId} />
+    <div style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column" }}>
+      
+      {/* 상단 네비게이션 바 */}
+      <nav style={{
+        height: "60px",
+        backgroundColor: "#000000ff",
+        color: "white",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 20px",
+        position: "relative",
+        zIndex: 1000,
+        flexShrink: 0,
+      }}>
+        {/* 로고 */}
+        <div style={{ fontSize: "24px", fontWeight: "bold" }}>
+          MapMemo
+        </div>
 
-      {/* 마커 목록 */}
-      <MarkerListPanel markers={markers} onMarkerClick={handleMarkerClick} onDeleteMarker={handleDeleteMarker}/>
+        {/* 오른쪽 메뉴 */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <button style={{
+            padding: "10px 16px",
+            backgroundColor: "#3498db",
+            border: "none",
+            borderRadius: "4px",
+            color: "white",
+            cursor: "pointer"
+          }}>로그인</button>
+
+          <button style={{
+            padding: "8px 16px",
+            backgroundColor: "#1abc9c",
+            border: "none",
+            borderRadius: "4px",
+            color: "white",
+            cursor: "pointer"
+          }}>회원가입</button>
+
+          {/* 마커 목록 패널 통합 */}
+          <MarkerListPanel
+            markers={markers}
+            onMarkerClick={handleMarkerClick}
+            onDeleteMarker={handleDeleteMarker}
+          />
+        </div>
+      </nav>
+
+      {/* 지도 영역 */}
+      <div style={{ flex: 1, position: "relative" }}>
+        <MapView
+          onMarkersChange={setMarkers}
+          mapRef={mapRef}
+          removeMarkerTrigger={deleteId}
+        />
+      </div>
     </div>
   );
 }
-
 
 export default App;
