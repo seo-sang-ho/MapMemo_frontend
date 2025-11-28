@@ -7,7 +7,6 @@ export interface Markerdata{
   category: string;
   lat: number;
   lng: number;
-
 }
 
 interface MarkerListPanelProps {
