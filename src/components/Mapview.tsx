@@ -38,29 +38,48 @@ export default function Mapview({ onMarkersChange, mapRef, removeMarkerTrigger }
     });
 
     // 서버에서 메모 불러오기
-    axios.get("/api/memos").then(res => {
+    axios.get("/api/memos/my").then(res => {
       res.data.forEach((memo: any) => addMemoMarker({...memo, lat: memo.latitude, lng: memo.longitude}));
     }).catch(err => console.error("메모 불러오기 실패", err));
 
-    // 지도 클릭 → 메모 추가
     naver.maps.Event.addListener(map, "click", async (e: any) => {
+      if (!localStorage.getItem("accessToken")) {
+        alert("로그인이 필요합니다");
+        return;
+      }
+
       const latlng = e.coord;
 
-      const title = prompt("메모 제목"); 
+      const title = prompt("메모 제목");
       if (!title) return;
 
-      const content = prompt("메모 내용"); 
+      const content = prompt("메모 내용");
       if (!content) return;
 
-      const category = prompt("종류"); 
+      const category = prompt("종류");
       if (!category) return;
 
-      const newMemo = { title, content, category, latitude: latlng.lat(), longitude: latlng.lng() };
+      const newMemo = {
+        title,
+        content,
+        category,
+        latitude: latlng.lat(),
+        longitude: latlng.lng(),
+      };
+
       try {
         const res = await axios.post("/api/memos", newMemo);
-        addMemoMarker({...newMemo, id: res.data.id, lat: latlng.lat(), lng: latlng.lng()});
-      } catch (err) { console.error("메모 생성 실패", err); }
+        addMemoMarker({
+          ...newMemo,
+          id: res.data.id,
+          lat: latlng.lat(),
+          lng: latlng.lng(),
+        });
+      } catch (err) {
+        console.error("메모 생성 실패", err);
+      }
     });
+
 
     // 메모 마커 + 정보창 표시 함수
     function addMemoMarker(markerData: Markerdata) {

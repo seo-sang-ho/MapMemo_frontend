@@ -14,12 +14,12 @@ api.interceptors.request.use(config => {
   return config;
 });
 
-// 응답 인터셉터: 403 → refresh 토큰으로 재발급
+// 응답 인터셉터: 401,403 → refresh 토큰으로 재발급
 api.interceptors.response.use(
   res => res,
   async err => {
     const originalRequest = err.config;
-    if (err.response.status === 403 && !originalRequest._retry) {
+    if (err.response.status === 401 || err.response.status === 403 && !originalRequest._retry) {
       originalRequest._retry = true;
       const { data: newAccessToken } = await api.post("/api/auth/refresh");
       localStorage.setItem("accessToken", newAccessToken);
