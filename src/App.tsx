@@ -61,21 +61,23 @@ function Main() {
   };
 
   const handleLogout = async () => {
-  try {
-    const api = (await import("./api/axiosInstance")).default;
+    try {
+      await api.post("/api/auth/logout");  // 서버 refreshToken 삭제
 
-    // 백엔드에서 refreshToken 쿠키 제거 + DB 토큰 무효화
-    await api.post("/api/auth/logout");
+      localStorage.removeItem("accessToken"); // 프론트 accessToken 삭제
 
-    // 프론트 accessToken 제거
-    localStorage.removeItem("accessToken");
+      setIsLoggedIn(false);  
+      setMarkers([]);        
+      setDeleteId(null);     
 
-    alert("로그아웃했습니다!");
-    navigate("/");
-  } catch (e) {
-    console.error("로그아웃 실패", e);
-  }
+      alert("로그아웃했습니다!");
+      navigate("/");         
+
+    } catch (e) {
+      console.error("로그아웃 실패", e);
+    }
 };
+
 
 
   return (
