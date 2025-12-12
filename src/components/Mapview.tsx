@@ -6,9 +6,10 @@ interface MapViewProps {
   onMarkersChange?: (markers: Markerdata[]) => void;
   mapRef?: React.RefObject<naver.maps.Map | null>;
   removeMarkerTrigger?: number | null;
+  isLoggedIn: boolean;
 }
 
-export default function Mapview({ onMarkersChange, mapRef, removeMarkerTrigger }: MapViewProps) {
+export default function Mapview({ onMarkersChange, mapRef, removeMarkerTrigger, isLoggedIn }: MapViewProps) {
   const divRef = useRef<HTMLDivElement | null>(null);
   const internalMapRef = useRef<naver.maps.Map | null>(null);
   const markerObjsRef = useRef<{data: Markerdata, marker: naver.maps.Marker, infoWindow: naver.maps.InfoWindow}[]>([]);
@@ -67,8 +68,6 @@ export default function Mapview({ onMarkersChange, mapRef, removeMarkerTrigger }
         longitude: latlng.lng(),
       };
 
-      console.log("📌 프론트에서 서버로 보낼 좌표:", newMemo);
-
       try {
         const res = await axios.post("/api/memos", newMemo);
         addMemoMarker({
@@ -120,6 +119,19 @@ export default function Mapview({ onMarkersChange, mapRef, removeMarkerTrigger }
       onMarkersChange?.(markerObjsRef.current.map(obj => obj.data));
     }
   }, [removeMarkerTrigger, onMarkersChange]);
+
+    // 로그아웃 시 지도 마커 제거
+  useEffect(() => {
+    if (!isLoggedIn) {
+      markerObjsRef.current.forEach(obj => {
+        obj.marker.setMap(null);
+        obj.infoWindow.close();
+      });
+
+      markerObjsRef.current = [];
+    }
+  }, [isLoggedIn]);
+
 
   return <div ref={divRef} style={{ width: "100%", height: "100%" }} />;
 }

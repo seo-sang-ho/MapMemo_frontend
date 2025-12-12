@@ -114,6 +114,7 @@ export default function MainPage() {
       {/* 지도 영역 */}
       <div style={{ flex: 1, position: "relative" }}>
         <Mapview
+          isLoggedIn={isLoggedIn}
           onMarkersChange={handleMarkersChange}
           mapRef={mapRef}
           removeMarkerTrigger={deleteId}
