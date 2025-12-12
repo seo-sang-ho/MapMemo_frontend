@@ -67,13 +67,15 @@ export default function Mapview({ onMarkersChange, mapRef, removeMarkerTrigger }
         longitude: latlng.lng(),
       };
 
+      console.log("📌 프론트에서 서버로 보낼 좌표:", newMemo);
+
       try {
         const res = await axios.post("/api/memos", newMemo);
         addMemoMarker({
           ...newMemo,
           id: res.data.id,
-          lat: latlng.lat(),
-          lng: latlng.lng(),
+          latitude: latlng.lat(),
+          longitude: latlng.lng(),
         });
       } catch (err) {
         console.error("메모 생성 실패", err);
@@ -83,8 +85,7 @@ export default function Mapview({ onMarkersChange, mapRef, removeMarkerTrigger }
 
     // 메모 마커 + 정보창 표시 함수
     function addMemoMarker(markerData: Markerdata) {
-      console.log(markerData);
-      const marker = new naver.maps.Marker({ position: new naver.maps.LatLng(markerData.lat, markerData.lng), map });
+      const marker = new naver.maps.Marker({ position: new naver.maps.LatLng(markerData.latitude, markerData.longitude), map });
       const infoWindow = new naver.maps.InfoWindow({
         content:  `
           <div style="

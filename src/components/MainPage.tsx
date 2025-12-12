@@ -1,5 +1,5 @@
 // src/pages/HomePage.tsx
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Mapview from "./Mapview";
 import type { Markerdata } from "./MarkerListPanel";
@@ -78,6 +78,10 @@ export default function MainPage() {
     }
   };
 
+  const handleMarkersChange = useCallback((newMarkers: Markerdata[]) => {
+  setMarkers(newMarkers);
+}, []);
+
   return (
     <div style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column" }}>
       {/* Navigation Bar */}
@@ -110,7 +114,7 @@ export default function MainPage() {
       {/* 지도 영역 */}
       <div style={{ flex: 1, position: "relative" }}>
         <Mapview
-          onMarkersChange={() => {}}
+          onMarkersChange={handleMarkersChange}
           mapRef={mapRef}
           removeMarkerTrigger={deleteId}
         />

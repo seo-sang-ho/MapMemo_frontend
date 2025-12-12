@@ -5,8 +5,8 @@ export interface Markerdata{
   title: string;
   content: string;
   category: string;
-  lat: number;
-  lng: number;
+  latitude: number;
+  longitude: number;
 }
 
 interface MarkerListPanelProps {
@@ -63,7 +63,7 @@ function MarkerListPanel({ markers, onMarkerClick, onDeleteMarker }: MarkerListP
                 justifyContent: "space-between",
                 alignItems: "center"
               }}>
-                <div onClick={() => onMarkerClick?.(m.lat, m.lng)} style={{ cursor: "pointer" }}>
+                <div onClick={() => onMarkerClick?.(m.latitude, m.longitude)} style={{ cursor: "pointer" }}>
                   <b>{m.title}</b><br />
                   <small>{m.content}</small><br />
                   <small>{m.category}</small>
