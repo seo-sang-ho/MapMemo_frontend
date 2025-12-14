@@ -1,10 +1,9 @@
-// src/pages/HomePage.tsx
 import { useRef, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Mapview from "./Mapview";
 import type { Markerdata } from "./MarkerListPanel";
-import MarkerListPanel from "./MarkerListPanel";
 import api from "../api/axiosInstance";
+import NavBar from "../components/NavBar";
 
 export default function MainPage() {
   const [markers, setMarkers] = useState<Markerdata[]>([]);
@@ -13,13 +12,11 @@ export default function MainPage() {
   const mapRef = useRef<naver.maps.Map | null>(null);
   const navigate = useNavigate();
 
-  // 페이지 로드 시 로그인 상태 확인
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     setIsLoggedIn(!!token);
   }, []);
 
-  // 로그인 상태 변경될 때 마커 다시 로드
   useEffect(() => {
     const fetchMyMemo = async () => {
       try {
@@ -30,18 +27,14 @@ export default function MainPage() {
       }
     };
 
-    if (isLoggedIn) {
-      fetchMyMemo();
-    } else {
-      setMarkers([]);
-    }
+    if (isLoggedIn) fetchMyMemo();
+    else setMarkers([]);
   }, [isLoggedIn]);
 
   const handleMarkerClick = (lat: number, lng: number) => {
-    if (mapRef.current) {
-      mapRef.current.setCenter(new window.naver.maps.LatLng(lat, lng));
-      mapRef.current.setZoom(17);
-    }
+    if (!mapRef.current) return;
+    mapRef.current.setCenter(new window.naver.maps.LatLng(lat, lng));
+    mapRef.current.setZoom(17);
   };
 
   const handleDeleteMarker = async (id: number) => {
@@ -49,7 +42,6 @@ export default function MainPage() {
       alert("로그인 후 삭제 가능합니다.");
       return;
     }
-
     if (!window.confirm("정말 삭제하시겠습니까?")) return;
 
     try {
@@ -64,13 +56,10 @@ export default function MainPage() {
   const handleLogout = async () => {
     try {
       await api.post("/api/auth/logout");
-
       localStorage.removeItem("accessToken");
-
       setIsLoggedIn(false);
       setMarkers([]);
       setDeleteId(null);
-
       alert("로그아웃했습니다!");
       navigate("/");
     } catch (e) {
@@ -79,39 +68,19 @@ export default function MainPage() {
   };
 
   const handleMarkersChange = useCallback((newMarkers: Markerdata[]) => {
-  setMarkers(newMarkers);
-}, []);
+    setMarkers(newMarkers);
+  }, []);
 
   return (
     <div style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column" }}>
-      {/* Navigation Bar */}
-      <nav style={{
-        height: "60px", backgroundColor: "#000", color: "white",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 20px", position: "relative", zIndex: 1000
-      }}>
-        <div style={{ fontSize: "24px", fontWeight: "bold" }}>MapMemo</div>
+      <NavBar
+        isLoggedIn={isLoggedIn}
+        markers={markers}
+        onLogout={handleLogout}
+        onMarkerClick={handleMarkerClick}
+        onDeleteMarker={handleDeleteMarker}
+      />
 
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          {!isLoggedIn ? (
-            <>
-              <button onClick={() => navigate("/login")}>로그인</button>
-              <button onClick={() => navigate("/signup")}>회원가입</button>
-            </>
-          ) : (
-            <>
-              <button onClick={handleLogout}>로그아웃</button>
-              <MarkerListPanel
-                markers={markers}
-                onMarkerClick={handleMarkerClick}
-                onDeleteMarker={handleDeleteMarker}
-              />
-            </>
-          )}
-        </div>
-      </nav>
-
-      {/* 지도 영역 */}
       <div style={{ flex: 1, position: "relative" }}>
         <Mapview
           isLoggedIn={isLoggedIn}
