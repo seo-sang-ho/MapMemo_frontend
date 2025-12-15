@@ -21,30 +21,44 @@ export default function NavBar({
   const navigate = useNavigate();
 
   return (
-    <nav
-      style={{
-        height: "60px",
-        backgroundColor: "#000",
-        color: "white",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 20px",
-        position: "relative",
-        zIndex: 1000,
-      }}
-    >
-      <div style={{ fontSize: "24px", fontWeight: "bold" }}>MapMemo</div>
+    <nav className="w-full h-[60px] bg-black text-white flex items-center justify-between px-5 z-[1000]">
+      {/* Logo */}
+      <div
+        className="text-xl font-bold cursor-pointer whitespace-nowrap"
+        onClick={() => navigate("/")}
+      >
+        MapMemo
+      </div>
 
-      <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+      {/* Right Area */}
+      <div className="flex items-center gap-2 whitespace-nowrap">
         {!isLoggedIn ? (
           <>
-            <button onClick={() => navigate("/login")}>로그인</button>
-            <button onClick={() => navigate("/signup")}>회원가입</button>
+            <button
+              onClick={() => navigate("/login")}
+              className="h-9 min-w-[80px] px-4 rounded-md border border-white
+                         hover:bg-white hover:text-black transition"
+            >
+              로그인
+            </button>
+            <button
+              onClick={() => navigate("/signup")}
+              className="h-9 min-w-[80px] px-4 rounded-md bg-white text-black
+                         hover:bg-gray-200 transition"
+            >
+              회원가입
+            </button>
           </>
         ) : (
           <>
-            <button onClick={onLogout}>로그아웃</button>
+            <button
+              onClick={onLogout}
+              className="h-9 min-w-[80px] px-4 rounded-md bg-white text-black
+                         hover:bg-gray-200 transition"
+            >
+              로그아웃
+            </button>
+
             <MarkerListPanel
               markers={markers}
               onMarkerClick={onMarkerClick}
