@@ -1,4 +1,5 @@
 import { useState } from "react";
+import MemoEditModal from "./MemoEditModal";
 
 export interface Markerdata {
   id: number;
@@ -9,82 +10,101 @@ export interface Markerdata {
   longitude: number;
 }
 
-interface MarkerListPanelProps {
+interface Props {
   markers: Markerdata[];
   onMarkerClick?: (lat: number, lng: number) => void;
   onDeleteMarker?: (id: number) => void;
+  onUpdateMarker?: (memo: Markerdata) => void;
 }
 
-function MarkerListPanel({
+export default function MarkerListPanel({
   markers,
   onMarkerClick,
   onDeleteMarker,
-}: MarkerListPanelProps) {
+  onUpdateMarker,
+}: Props) {
   const [open, setOpen] = useState(false);
+  const [editMemo, setEditMemo] = useState<Markerdata | null>(null);
 
   return (
     <div className="relative">
-      {/* Toggle Button */}
       <button
-        onClick={() => setOpen(prev => !prev)}
-        className="h-9 px-4 rounded-md bg-orange-500 text-white
-                   hover:bg-orange-600 transition whitespace-nowrap"
+        onClick={() => setOpen(p => !p)}
+        className="h-9 px-4 rounded-md bg-orange-500 text-white hover:bg-orange-600 flex items-center justify-center"
       >
         마커 목록
       </button>
 
-      {/* Dropdown */}
       {open && (
         <div
-          className="absolute right-0 top-12 w-64 max-h-[60vh] overflow-y-auto
-                     bg-white rounded-xl shadow-lg p-3 text-black z-[1000]"
+          className="absolute right-0 top-12 w-64
+                     bg-white text-black
+                     rounded-xl shadow p-3 z-50"
         >
           <h4 className="text-center font-semibold mb-3">
             📍 마커 목록
           </h4>
 
           {markers.length === 0 ? (
-            <p className="text-center text-gray-500 text-sm">
+            <p className="text-sm text-gray-500 text-center">
               표시된 마커가 없습니다.
             </p>
           ) : (
-            <ul className="space-y-2">
-              {markers.map((m) => (
-                <li
-                  key={m.id}
-                  className="flex justify-between items-start gap-2
-                             border-b last:border-b-0 pb-2"
+            markers.map(m => (
+              <div
+                key={m.id}
+                className="border-b last:border-b-0 pb-2 mb-2
+                           flex justify-between gap-2"
+              >
+                <div
+                  className="cursor-pointer flex-1"
+                  onClick={() => onMarkerClick?.(m.latitude, m.longitude)}
                 >
-                  <div
-                    className="cursor-pointer flex-1"
-                    onClick={() => onMarkerClick?.(m.latitude, m.longitude)}
-                  >
-                    <p className="font-semibold text-sm truncate">
-                      {m.title}
-                    </p>
-                    <p className="text-xs text-gray-600 truncate">
-                      {m.content}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {m.category}
-                    </p>
-                  </div>
+                  <p className="font-semibold text-sm text-black truncate">
+                    {m.title}
+                  </p>
+                  <p className="text-xs text-gray-700 truncate">
+                    {m.content}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {m.category}
+                  </p>
+                </div>
 
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={() => setEditMemo(m)}
+                    className="text-xs px-2 py-1 rounded
+                               bg-gray-700 text-white
+                               hover:bg-gray-800"
+                  >
+                    수정
+                  </button>
                   <button
                     onClick={() => onDeleteMarker?.(m.id)}
-                    className="text-xs px-2 py-1 rounded-md bg-red-500 text-white
-                               hover:bg-red-600 transition whitespace-nowrap"
+                    className="text-xs px-2 py-1 rounded
+                               bg-red-500 text-white
+                               hover:bg-red-600"
                   >
                     삭제
                   </button>
-                </li>
-              ))}
-            </ul>
+                </div>
+              </div>
+            ))
           )}
         </div>
+      )}
+
+      {editMemo && (
+        <MemoEditModal
+          memo={editMemo}
+          onClose={() => setEditMemo(null)}
+          onUpdated={(updated) => {
+            onUpdateMarker?.(updated);
+            setEditMemo(null);
+          }}
+        />
       )}
     </div>
   );
 }
-
-export default MarkerListPanel;

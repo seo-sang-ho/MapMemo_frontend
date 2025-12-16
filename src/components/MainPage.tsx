@@ -22,8 +22,8 @@ export default function MainPage() {
       try {
         const res = await api.get("/api/memos/my");
         setMarkers(res.data);
-      } catch (error) {
-        console.error("내 메모 불러오기 실패:", error);
+      } catch (e) {
+        console.error("내 메모 불러오기 실패", e);
       }
     };
 
@@ -38,33 +38,41 @@ export default function MainPage() {
   };
 
   const handleDeleteMarker = async (id: number) => {
-    if (!isLoggedIn) {
-      alert("로그인 후 삭제 가능합니다.");
-      return;
-    }
     if (!window.confirm("정말 삭제하시겠습니까?")) return;
 
-    try {
-      await api.delete(`/api/memos/${id}`);
-      setMarkers(prev => prev.filter(m => m.id !== id));
-      setDeleteId(id);
-    } catch (err) {
-      console.error("삭제 실패", err);
-    }
+    await api.delete(`/api/memos/${id}`);
+    setMarkers(prev => prev.filter(m => m.id !== id));
+    setDeleteId(id);
   };
 
+const handleUpdateMarker = async (updated: Markerdata) => {
+  try {
+    await api.put(`/api/memos/${updated.id}`, {
+      title: updated.title,
+      content: updated.content,
+      category: updated.category,
+    });
+
+    // ✅ 서버 응답을 믿지 말고, 기존 데이터 유지
+    setMarkers(prev =>
+      prev.map(m =>
+        m.id === updated.id
+          ? { ...m, ...updated }
+          : m
+      )
+    );
+  } catch (e) {
+    alert("메모 수정 실패");
+    console.error(e);
+  }
+};
+
   const handleLogout = async () => {
-    try {
-      await api.post("/api/auth/logout");
-      localStorage.removeItem("accessToken");
-      setIsLoggedIn(false);
-      setMarkers([]);
-      setDeleteId(null);
-      alert("로그아웃했습니다!");
-      navigate("/");
-    } catch (e) {
-      console.error("로그아웃 실패", e);
-    }
+    await api.post("/api/auth/logout");
+    localStorage.removeItem("accessToken");
+    setIsLoggedIn(false);
+    setMarkers([]);
+    navigate("/");
   };
 
   const handleMarkersChange = useCallback((newMarkers: Markerdata[]) => {
@@ -72,16 +80,17 @@ export default function MainPage() {
   }, []);
 
   return (
-    <div style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column" }}>
+    <div className="w-screen h-screen flex flex-col">
       <NavBar
         isLoggedIn={isLoggedIn}
         markers={markers}
         onLogout={handleLogout}
         onMarkerClick={handleMarkerClick}
         onDeleteMarker={handleDeleteMarker}
+        onUpdateMarker={handleUpdateMarker}
       />
 
-      <div style={{ flex: 1, position: "relative" }}>
+      <div className="flex-1 relative">
         <Mapview
           isLoggedIn={isLoggedIn}
           onMarkersChange={handleMarkersChange}

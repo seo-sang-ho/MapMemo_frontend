@@ -1,14 +1,14 @@
-// src/components/NavBar.tsx
 import { useNavigate } from "react-router-dom";
-import MarkerListPanel from "../components/MarkerListPanel";
-import type { Markerdata } from "../components/MarkerListPanel";
+import MarkerListPanel from "./MarkerListPanel";
+import type { Markerdata } from "./MarkerListPanel";
 
-interface NavBarProps {
+interface Props {
   isLoggedIn: boolean;
   markers: Markerdata[];
   onLogout: () => void;
   onMarkerClick: (lat: number, lng: number) => void;
   onDeleteMarker: (id: number) => void;
+  onUpdateMarker: (memo: Markerdata) => void;
 }
 
 export default function NavBar({
@@ -17,56 +17,32 @@ export default function NavBar({
   onLogout,
   onMarkerClick,
   onDeleteMarker,
-}: NavBarProps) {
+  onUpdateMarker,
+}: Props) {
   const navigate = useNavigate();
 
   return (
-    <nav className="w-full h-[60px] bg-black text-white flex items-center justify-between px-5 z-[1000]">
-      {/* Logo */}
-      <div
-        className="text-xl font-bold cursor-pointer whitespace-nowrap"
-        onClick={() => navigate("/")}
-      >
+    <nav className="h-[60px] bg-black text-white flex justify-between items-center px-5">
+      <div className="font-bold cursor-pointer" onClick={() => navigate("/")}>
         MapMemo
       </div>
 
-      {/* Right Area */}
-      <div className="flex items-center gap-2 whitespace-nowrap">
-        {!isLoggedIn ? (
-          <>
-            <button
-              onClick={() => navigate("/login")}
-              className="h-9 min-w-[80px] px-4 rounded-md border border-white
-                         hover:bg-white hover:text-black transition"
-            >
-              로그인
-            </button>
-            <button
-              onClick={() => navigate("/signup")}
-              className="h-9 min-w-[80px] px-4 rounded-md bg-white text-black
-                         hover:bg-gray-200 transition"
-            >
-              회원가입
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={onLogout}
-              className="h-9 min-w-[80px] px-4 rounded-md bg-white text-black
-                         hover:bg-gray-200 transition"
-            >
-              로그아웃
-            </button>
-
-            <MarkerListPanel
-              markers={markers}
-              onMarkerClick={onMarkerClick}
-              onDeleteMarker={onDeleteMarker}
-            />
-          </>
-        )}
-      </div>
+      {!isLoggedIn ? (
+        <div className="flex gap-2">
+          <button onClick={() => navigate("/login")}>로그인</button>
+          <button onClick={() => navigate("/signup")}>회원가입</button>
+        </div>
+      ) : (
+        <div className="flex gap-2 items-center">
+          <button onClick={onLogout}>로그아웃</button>
+          <MarkerListPanel
+            markers={markers}
+            onMarkerClick={onMarkerClick}
+            onDeleteMarker={onDeleteMarker}
+            onUpdateMarker={onUpdateMarker}
+          />
+        </div>
+      )}
     </nav>
   );
 }
