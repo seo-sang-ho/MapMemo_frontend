@@ -9,6 +9,11 @@ export default function MainPage() {
   const [markers, setMarkers] = useState<Markerdata[]>([]);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // 검색 상태
+  const [keyword, setKeyword] = useState("");
+  const [category, setCategory] = useState("");
+
   const mapRef = useRef<naver.maps.Map | null>(null);
   const navigate = useNavigate();
 
@@ -45,27 +50,37 @@ export default function MainPage() {
     setDeleteId(id);
   };
 
-const handleUpdateMarker = async (updated: Markerdata) => {
-  try {
-    await api.put(`/api/memos/${updated.id}`, {
-      title: updated.title,
-      content: updated.content,
-      category: updated.category,
+  // 메모 수정
+  const handleUpdateMarker = async (updated: Markerdata) => {
+    try {
+      await api.put(`/api/memos/${updated.id}`, {
+        title: updated.title,
+        content: updated.content,
+        category: updated.category,
+      });
+
+      setMarkers(prev =>
+        prev.map(m =>
+          m.id === updated.id ? { ...m, ...updated } : m
+        )
+      );
+    } catch (e) {
+      alert("메모 수정 실패");
+      console.error(e);
+    }
+  };
+
+  const handleSearch = async () => {
+    const res = await api.get("/api/memos/search", {
+      params: {
+        keyword,
+        category: category || undefined,
+      },
     });
 
-    // ✅ 서버 응답을 믿지 말고, 기존 데이터 유지
-    setMarkers(prev =>
-      prev.map(m =>
-        m.id === updated.id
-          ? { ...m, ...updated }
-          : m
-      )
-    );
-  } catch (e) {
-    alert("메모 수정 실패");
-    console.error(e);
-  }
-};
+    setMarkers(res.data);
+  };
+
 
   const handleLogout = async () => {
     await api.post("/api/auth/logout");
@@ -84,6 +99,11 @@ const handleUpdateMarker = async (updated: Markerdata) => {
       <NavBar
         isLoggedIn={isLoggedIn}
         markers={markers}
+        keyword={keyword}
+        category={category}
+        onKeywordChange={setKeyword}
+        onCategoryChange={setCategory}
+        onSearch={handleSearch}
         onLogout={handleLogout}
         onMarkerClick={handleMarkerClick}
         onDeleteMarker={handleDeleteMarker}
