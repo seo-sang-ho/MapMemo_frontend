@@ -1,22 +1,28 @@
 import { useState } from "react";
 import api from "../api/axiosInstance";
-import type { Markerdata } from "./MarkerListPanel";
 import CategorySelect from "./CategorySelect";
+import type { Markerdata } from "./MarkerListPanel";
 
 interface Props {
-  memo: Markerdata;
+  latitude: number;
+  longitude: number;
   onClose: () => void;
-  onUpdated: (memo: Markerdata) => void;
+  onCreated: (memo: Markerdata) => void;
 }
 
-export default function MemoEditModal({ memo, onClose, onUpdated }: Props) {
-  const [title, setTitle] = useState(memo.title);
-  const [content, setContent] = useState(memo.content);
-  const [category, setCategory] = useState(memo.category);
-  const [loading, setLoading] = useState(false);
+export default function MemoCreateModal({
+  latitude,
+  longitude,
+  onClose,
+  onCreated,
+}: Props) {
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [category, setCategory] = useState("ETC");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleUpdate = async () => {
+  const handleCreate = async () => {
     if (!title || !content) {
       setError("제목과 내용은 필수입니다.");
       return;
@@ -24,16 +30,18 @@ export default function MemoEditModal({ memo, onClose, onUpdated }: Props) {
 
     try {
       setLoading(true);
-      await api.put(`/api/memos/${memo.id}`, {
+      const res = await api.post("/api/memos", {
         title,
         content,
         category,
+        latitude,
+        longitude,
       });
 
-      onUpdated({ ...memo, title, content, category });
+      onCreated(res.data);
       onClose();
     } catch {
-      setError("메모 수정에 실패했습니다.");
+      setError("메모 등록에 실패했습니다.");
     } finally {
       setLoading(false);
     }
@@ -42,7 +50,7 @@ export default function MemoEditModal({ memo, onClose, onUpdated }: Props) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white w-full max-w-md rounded-xl shadow p-6">
-        <h2 className="text-lg font-bold mb-4">메모 수정</h2>
+        <h2 className="text-lg font-bold mb-4">메모 등록</h2>
 
         <div className="flex flex-col gap-3">
           <input
@@ -60,15 +68,10 @@ export default function MemoEditModal({ memo, onClose, onUpdated }: Props) {
             placeholder="내용"
           />
 
-          {/* ✅ 카테고리 버튼 UI */}
-          <CategorySelect
-            value={category}
-            onChange={setCategory}
-          />
+          {/* ✅ 카테고리 버튼 선택 */}
+          <CategorySelect value={category} onChange={setCategory} />
 
-          {error && (
-            <p className="text-sm text-red-600">{error}</p>
-          )}
+          {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
 
         <div className="flex justify-end gap-2 mt-5">
@@ -76,11 +79,11 @@ export default function MemoEditModal({ memo, onClose, onUpdated }: Props) {
             취소
           </button>
           <button
-            onClick={handleUpdate}
+            onClick={handleCreate}
             disabled={loading}
             className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
           >
-            수정
+            등록
           </button>
         </div>
       </div>

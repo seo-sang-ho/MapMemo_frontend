@@ -39,10 +39,10 @@ declare namespace naver.maps {
 
   // 정보창
   class InfoWindow {
-    constructor(options: { content: string });
-    open(map: Map, marker: Marker): void;
-    close(): void;
-  }
+  constructor(options: { content: string | HTMLElement });
+  open(map: Map, marker: Marker): void;
+  close(): void;
+  } 
 
   // 이벤트
   const Event: {

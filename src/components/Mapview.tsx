@@ -1,6 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
 import axios from "../api/axiosInstance";
 import type { Markerdata } from "./MarkerListPanel";
+import MemoCreateModal from "../components/MemoCreateModal";
+import InfoWindowContent from "../components/InfoWindowContent";
 
 interface MapViewProps {
   onMarkersChange?: (markers: Markerdata[]) => void;
@@ -9,129 +12,151 @@ interface MapViewProps {
   isLoggedIn: boolean;
 }
 
-export default function Mapview({ onMarkersChange, mapRef, removeMarkerTrigger, isLoggedIn }: MapViewProps) {
+export default function Mapview({
+  onMarkersChange,
+  mapRef,
+  removeMarkerTrigger,
+  isLoggedIn,
+}: MapViewProps) {
   const divRef = useRef<HTMLDivElement | null>(null);
   const internalMapRef = useRef<naver.maps.Map | null>(null);
-  const markerObjsRef = useRef<{data: Markerdata, marker: naver.maps.Marker, infoWindow: naver.maps.InfoWindow}[]>([]);
+
+  const markerObjsRef = useRef<
+    {
+      data: Markerdata;
+      marker: naver.maps.Marker;
+      infoWindow: naver.maps.InfoWindow;
+    }[]
+  >([]);
+
+  const [createPos, setCreatePos] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!window.naver) return;
 
-    // 지도 생성
-    internalMapRef.current = new naver.maps.Map(divRef.current!, { 
-      center: new naver.maps.LatLng(37.5665, 126.9780), 
-      zoom: 16, 
+    internalMapRef.current = new naver.maps.Map(divRef.current!, {
+      center: new naver.maps.LatLng(37.5665, 126.978),
+      zoom: 16,
       zoomControl: true,
       zoomControlOptions: {
         style: naver.maps.ZoomControlStyle.SMALL,
-        position: naver.maps.Position.TOP_RIGHT
-    }
+        position: naver.maps.Position.TOP_RIGHT,
+      },
     });
 
     if (mapRef) mapRef.current = internalMapRef.current;
     const map = internalMapRef.current;
 
-    // 현재 위치 표시
     navigator.geolocation?.getCurrentPosition(pos => {
-      const loc = new naver.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
+      const loc = new naver.maps.LatLng(
+        pos.coords.latitude,
+        pos.coords.longitude
+      );
       new naver.maps.Marker({ position: loc, map });
       map.setCenter(loc);
     });
 
-    // 서버에서 메모 불러오기
     axios.get("/api/memos/my").then(res => {
-      res.data.forEach((memo: any) => addMemoMarker({...memo, lat: memo.latitude, lng: memo.longitude}));
-    }).catch(err => console.error("메모 불러오기 실패", err));
+      res.data.forEach((memo: Markerdata) => addMemoMarker(memo));
+    });
 
-    naver.maps.Event.addListener(map, "click", async (e: any) => {
+    naver.maps.Event.addListener(map, "click", (e: any) => {
       if (!localStorage.getItem("accessToken")) {
         alert("로그인이 필요합니다");
         return;
       }
 
-      const latlng = e.coord;
-
-      const title = prompt("메모 제목");
-      if (!title) return;
-
-      const content = prompt("메모 내용");
-      if (!content) return;
-
-      const category = prompt("종류");
-      if (!category) return;
-
-      const newMemo = {
-        title,
-        content,
-        category,
-        latitude: latlng.lat(),
-        longitude: latlng.lng(),
-      };
-
-      try {
-        const res = await axios.post("/api/memos", newMemo);
-        addMemoMarker({
-          ...newMemo,
-          id: res.data.id,
-          latitude: latlng.lat(),
-          longitude: latlng.lng(),
-        });
-      } catch (err) {
-        console.error("메모 생성 실패", err);
-      }
+      setCreatePos({
+        lat: e.coord.lat(),
+        lng: e.coord.lng(),
+      });
     });
 
-
-    // 메모 마커 + 정보창 표시 함수
     function addMemoMarker(markerData: Markerdata) {
-      const marker = new naver.maps.Marker({ position: new naver.maps.LatLng(markerData.latitude, markerData.longitude), map });
-      const infoWindow = new naver.maps.InfoWindow({
-        content:  `
-          <div style="
-            padding: 8px; 
-            min-width: 150px; 
-            color: black; 
-            background-color: #ffffff; 
-            border-radius: 6px; 
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-          ">
-            <b>${markerData.title}</b><br/>
-            ${markerData.content}<br/>
-            <small style="color: gray;">[${markerData.category}]</small>
-          </div>
-        `
+      const marker = new naver.maps.Marker({
+        position: new naver.maps.LatLng(
+          markerData.latitude,
+          markerData.longitude
+        ),
+        map,
       });
-      naver.maps.Event.addListener(marker, "click", () => infoWindow.open(map, marker));
-      markerObjsRef.current.push({ data: markerData, marker, infoWindow });
-      onMarkersChange?.(markerObjsRef.current.map(o => o.data));
+
+      const container = document.createElement("div");
+      const root = createRoot(container);
+
+      root.render(<InfoWindowContent memo={markerData} />);
+
+      const infoWindow = new naver.maps.InfoWindow({
+        content: container, 
+      });
+
+      naver.maps.Event.addListener(marker, "click", () => {
+        infoWindow.open(map, marker);
+      });
+
+      markerObjsRef.current.push({
+        data: markerData,
+        marker,
+        infoWindow,
+      });
+
+      onMarkersChange?.(
+        markerObjsRef.current.map(o => o.data)
+      );
     }
 
-  }, [onMarkersChange, mapRef]);
 
-  // 삭제 요청 처리
+    (window as any).addMemoMarker = addMemoMarker;
+  }, [mapRef, onMarkersChange]);
+
   useEffect(() => {
     if (!removeMarkerTrigger) return;
-    const toRemove = markerObjsRef.current.find(obj => obj.data.id === removeMarkerTrigger);
-    if (toRemove) {
-      toRemove.marker.setMap(null);
-      toRemove.infoWindow.close();
-      markerObjsRef.current = markerObjsRef.current.filter(obj => obj.data.id !== removeMarkerTrigger);
-      onMarkersChange?.(markerObjsRef.current.map(obj => obj.data));
+
+    const target = markerObjsRef.current.find(
+      o => o.data.id === removeMarkerTrigger
+    );
+
+    if (target) {
+      target.marker.setMap(null);
+      target.infoWindow.close();
+
+      markerObjsRef.current = markerObjsRef.current.filter(
+        o => o.data.id !== removeMarkerTrigger
+      );
+
+      onMarkersChange?.(
+        markerObjsRef.current.map(o => o.data)
+      );
     }
   }, [removeMarkerTrigger, onMarkersChange]);
 
-    // 로그아웃 시 지도 마커 제거
   useEffect(() => {
     if (!isLoggedIn) {
-      markerObjsRef.current.forEach(obj => {
-        obj.marker.setMap(null);
-        obj.infoWindow.close();
+      markerObjsRef.current.forEach(o => {
+        o.marker.setMap(null);
+        o.infoWindow.close();
       });
-
       markerObjsRef.current = [];
     }
   }, [isLoggedIn]);
 
+  return (
+    <>
+      <div ref={divRef} style={{ width: "100%", height: "100%" }} />
 
-  return <div ref={divRef} style={{ width: "100%", height: "100%" }} />;
+      {createPos && (
+        <MemoCreateModal
+          latitude={createPos.lat}
+          longitude={createPos.lng}
+          onClose={() => setCreatePos(null)}
+          onCreated={(memo) => {
+            (window as any).addMemoMarker(memo);
+          }}
+        />
+      )}
+    </>
+  );
 }
