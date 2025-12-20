@@ -73,9 +73,11 @@ export default function MarkerListPanel({
         className="w-full px-2 py-1 border rounded text-sm"
       >
         <option value="">전체 카테고리</option>
+        <option value="FOOD">화장실</option>
+        <option value="CAFE">상점</option>
+        <option value="WORK">회사</option>
+        <option value="TRAVEL">여행</option>
         <option value="TOILET">화장실</option>
-        <option value="STORE">상점</option>
-        <option value="ETC">기타</option>
       </select>
 
       <button

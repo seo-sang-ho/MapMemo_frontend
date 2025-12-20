@@ -4,6 +4,8 @@ import axios from "../api/axiosInstance";
 import type { Markerdata } from "./MarkerListPanel";
 import MemoCreateModal from "../components/MemoCreateModal";
 import InfoWindowContent from "../components/InfoWindowContent";
+import { MARKER_ICON_BY_CATEGORY } from "../constants/markerIcons";
+
 
 interface MapViewProps {
   onMarkersChange?: (markers: Markerdata[]) => void;
@@ -76,13 +78,25 @@ export default function Mapview({
     });
 
     function addMemoMarker(markerData: Markerdata) {
-      const marker = new naver.maps.Marker({
-        position: new naver.maps.LatLng(
-          markerData.latitude,
-          markerData.longitude
-        ),
-        map,
-      });
+      const iconUrl =
+      MARKER_ICON_BY_CATEGORY[markerData.category] ??
+      MARKER_ICON_BY_CATEGORY.DEFAULT;
+
+    const marker = new naver.maps.Marker({
+      position: new naver.maps.LatLng(
+        markerData.latitude,
+        markerData.longitude
+      ),
+      map,
+      icon: {
+        url: iconUrl,
+        size: new naver.maps.Size(32, 32),
+        scaledSize: new naver.maps.Size(32, 32),
+        origin: new naver.maps.Point(0, 0),
+        anchor: new naver.maps.Point(16, 32),
+      },
+    });
+
 
       const container = document.createElement("div");
       const root = createRoot(container);

@@ -32,8 +32,26 @@ declare namespace naver.maps {
   }
 
   // 마커
-  class Marker {
-    constructor(options: { position: LatLng; map?: Map });
+  class Size {
+  constructor(width: number, height: number);
+}
+
+class Point {
+  constructor(x: number, y: number);
+}
+
+class Marker {
+  constructor(options: {
+    position: LatLng;
+    map?: Map;
+    icon?: {
+      url: string;
+      size?: Size;
+      scaledSize?: Size;
+      origin?: Point;
+      anchor?: Point;
+    };
+  });
     setMap(map: Map | null): void;
   }
 
