@@ -6,7 +6,6 @@ import MemoCreateModal from "../components/MemoCreateModal";
 import InfoWindowContent from "../components/InfoWindowContent";
 import { MARKER_ICON_BY_CATEGORY } from "../constants/markerIcons";
 
-
 interface MapViewProps {
   onMarkersChange?: (markers: Markerdata[]) => void;
   mapRef?: React.RefObject<naver.maps.Map | null>;
@@ -37,9 +36,10 @@ export default function Mapview({
   } | null>(null);
 
   useEffect(() => {
-    if (!window.naver) return;
+    if (!window.naver || !divRef.current) return;
 
-    internalMapRef.current = new naver.maps.Map(divRef.current!, {
+    // ================= 지도 생성 =================
+    const map = new naver.maps.Map(divRef.current, {
       center: new naver.maps.LatLng(37.5665, 126.978),
       zoom: 16,
       zoomControl: true,
@@ -49,62 +49,110 @@ export default function Mapview({
       },
     });
 
-    if (mapRef) mapRef.current = internalMapRef.current;
-    const map = internalMapRef.current;
+    internalMapRef.current = map;
+    if (mapRef) mapRef.current = map;
 
-    navigator.geolocation?.getCurrentPosition(pos => {
-      const loc = new naver.maps.LatLng(
-        pos.coords.latitude,
-        pos.coords.longitude
+    // ================= 신버전 규칙: init 이후 =================
+    naver.maps.Event.once(map, "init", () => {
+      // 현재 위치 초기 표시
+      navigator.geolocation?.getCurrentPosition(pos => {
+        const loc = new naver.maps.LatLng(
+          pos.coords.latitude,
+          pos.coords.longitude
+        );
+        new naver.maps.Marker({ position: loc, map });
+        map.setCenter(loc);
+      });
+
+      // 내 위치 버튼 (CustomControl)
+      const locationBtnHtml = `
+        <button
+          style="
+            background: white;
+            border: none;
+            padding: 8px 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            cursor: pointer;
+            font-size: 13px;
+            color: black;
+          "
+        >
+          📍 내 위치
+        </button>
+      `;
+
+      const locationControl = new naver.maps.CustomControl(
+        locationBtnHtml,
+        { position: naver.maps.Position.RIGHT_BOTTOM }
       );
-      new naver.maps.Marker({ position: loc, map });
-      map.setCenter(loc);
-    });
 
-    axios.get("/api/memos/my").then(res => {
-      res.data.forEach((memo: Markerdata) => addMemoMarker(memo));
-    });
+      locationControl.setMap(map);
 
-    naver.maps.Event.addListener(map, "click", (e: any) => {
-      if (!localStorage.getItem("accessToken")) {
-        alert("로그인이 필요합니다");
-        return;
-      }
+      naver.maps.Event.addDOMListener(
+        locationControl.getElement(),
+        "click",
+        () => {
+          navigator.geolocation.getCurrentPosition(
+            pos => {
+              const latlng = new naver.maps.LatLng(
+                pos.coords.latitude,
+                pos.coords.longitude
+              );
+              map.setCenter(latlng);
+              map.setZoom(16);
+            },
+            () => alert("현재 위치를 가져올 수 없습니다.")
+          );
+        }
+      );
 
-      setCreatePos({
-        lat: e.coord.lat(),
-        lng: e.coord.lng(),
+      // 서버 메모 로딩
+      axios.get("/api/memos/my").then(res => {
+        res.data.forEach((memo: Markerdata) => addMemoMarker(memo));
+      });
+
+      // 지도 클릭 → 메모 생성
+      naver.maps.Event.addListener(map, "click", (e: any) => {
+        if (!localStorage.getItem("accessToken")) {
+          alert("로그인이 필요합니다");
+          return;
+        }
+
+        setCreatePos({
+          lat: e.coord.lat(),
+          lng: e.coord.lng(),
+        });
       });
     });
 
+    // ================= 마커 생성 함수 =================
     function addMemoMarker(markerData: Markerdata) {
       const iconUrl =
-      MARKER_ICON_BY_CATEGORY[markerData.category] ??
-      MARKER_ICON_BY_CATEGORY.DEFAULT;
+        MARKER_ICON_BY_CATEGORY[markerData.category] ??
+        MARKER_ICON_BY_CATEGORY.DEFAULT;
 
-    const marker = new naver.maps.Marker({
-      position: new naver.maps.LatLng(
-        markerData.latitude,
-        markerData.longitude
-      ),
-      map,
-      icon: {
-        url: iconUrl,
-        size: new naver.maps.Size(32, 32),
-        scaledSize: new naver.maps.Size(32, 32),
-        origin: new naver.maps.Point(0, 0),
-        anchor: new naver.maps.Point(16, 32),
-      },
-    });
-
+      const marker = new naver.maps.Marker({
+        position: new naver.maps.LatLng(
+          markerData.latitude,
+          markerData.longitude
+        ),
+        map,
+        icon: {
+          url: iconUrl,
+          size: new naver.maps.Size(32, 32),
+          scaledSize: new naver.maps.Size(32, 32),
+          origin: new naver.maps.Point(0, 0),
+          anchor: new naver.maps.Point(16, 32),
+        },
+      });
 
       const container = document.createElement("div");
       const root = createRoot(container);
-
       root.render(<InfoWindowContent memo={markerData} />);
 
       const infoWindow = new naver.maps.InfoWindow({
-        content: container, 
+        content: container,
       });
 
       naver.maps.Event.addListener(marker, "click", () => {
@@ -122,10 +170,10 @@ export default function Mapview({
       );
     }
 
-
     (window as any).addMemoMarker = addMemoMarker;
   }, [mapRef, onMarkersChange]);
 
+  // ================= 마커 삭제 =================
   useEffect(() => {
     if (!removeMarkerTrigger) return;
 
@@ -147,6 +195,7 @@ export default function Mapview({
     }
   }, [removeMarkerTrigger, onMarkersChange]);
 
+  // ================= 로그아웃 처리 =================
   useEffect(() => {
     if (!isLoggedIn) {
       markerObjsRef.current.forEach(o => {

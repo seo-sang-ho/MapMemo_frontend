@@ -3,14 +3,19 @@ interface Window {
 }
 
 declare namespace naver.maps {
-  // 지도 클래스
+  /* ================= Map ================= */
   class Map {
-    constructor(el: HTMLElement, options: MapOptions);
+    constructor(el: HTMLElement, options?: MapOptions);
     setCenter(latlng: LatLng): void;
     setZoom(zoom: number): void;
+
+    getOptions(key?: string): any;
+    setOptions(key: string | object, value?: any): void;
+
+    controls: any;
+    mapTypes?: any;
   }
 
-  // 지도 옵션
   interface MapOptions {
     center: LatLng;
     zoom?: number;
@@ -22,51 +27,86 @@ declare namespace naver.maps {
     };
     mapTypeControl?: boolean;
     mapDataControl?: boolean;
+    mapTypes?: any;
+    mapTypeId?: any;
   }
 
-  // 좌표
+  /* ================= LatLng ================= */
   class LatLng {
     constructor(lat: number, lng: number);
     lat(): number;
     lng(): number;
   }
 
-  // 마커
+  /* ================= Size / Point ================= */
   class Size {
-  constructor(width: number, height: number);
-}
+    constructor(width: number, height: number);
+  }
 
-class Point {
-  constructor(x: number, y: number);
-}
+  class Point {
+    constructor(x: number, y: number);
+  }
 
-class Marker {
-  constructor(options: {
-    position: LatLng;
-    map?: Map;
-    icon?: {
-      url: string;
-      size?: Size;
-      scaledSize?: Size;
-      origin?: Point;
-      anchor?: Point;
-    };
-  });
+  /* ================= Marker ================= */
+  class Marker {
+    constructor(options: {
+      position: LatLng;
+      map?: Map;
+      icon?: {
+        url: string;
+        size?: Size;
+        scaledSize?: Size;
+        origin?: Point;
+        anchor?: Point;
+      };
+    });
     setMap(map: Map | null): void;
   }
 
-  // 정보창
+  /* ================= InfoWindow ================= */
   class InfoWindow {
-  constructor(options: { content: string | HTMLElement });
-  open(map: Map, marker: Marker): void;
-  close(): void;
-  } 
+    constructor(options: {
+      content: string | HTMLElement;
+    });
+    open(map: Map, marker: Marker): void;
+    close(): void;
+  }
 
-  // 이벤트
-  const Event: {
-    addListener(obj: any, event: string, callback: Function): void;
-  };
+  /* ================= CustomControl ================= */
+  class CustomControl {
+    constructor(
+      html: string | HTMLElement,
+      options?: {
+        position?: any;
+      }
+    );
+    setMap(map: Map | null): void;
+    getElement(): HTMLElement;
+  }
 
+  /* ================= Event ================= */
+  namespace Event {
+    function addListener(
+      target: any,
+      eventName: string,
+      handler: (...args: any[]) => void
+    ): void;
+
+    function addDOMListener(
+      target: HTMLElement,
+      eventName: string,
+      handler: (e: Event) => void
+    ): void;
+
+    function once(
+      target: any,
+      eventName: string,
+      handler: (...args: any[]) => void
+    ): void;
+  }
+
+  /* ================= Constants ================= */
   const ZoomControlStyle: any;
   const Position: any;
+  const MapTypeId: any;
 }
