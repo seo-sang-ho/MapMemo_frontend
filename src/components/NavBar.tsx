@@ -1,4 +1,3 @@
-// src/components/NavBar.tsx
 import { useNavigate } from "react-router-dom";
 import MarkerListPanel from "./MarkerListPanel";
 import type { Markerdata } from "./MarkerListPanel";
@@ -18,7 +17,6 @@ interface NavBarProps {
   onDeleteMarker: (id: number) => void;
   onUpdateMarker: (updateMarker: Markerdata) => void;
 }
-
 
 export default function NavBar({
   isLoggedIn,
@@ -52,13 +50,16 @@ export default function NavBar({
             <button
               onClick={() => navigate("/login")}
               className="h-9 min-w-[80px] px-4 rounded-md border border-white
+                         flex items-center justify-center
                          hover:bg-white hover:text-black transition"
             >
               로그인
             </button>
+
             <button
               onClick={() => navigate("/signup")}
               className="h-9 min-w-[80px] px-4 rounded-md bg-white text-black
+                         flex items-center justify-center
                          hover:bg-gray-200 transition"
             >
               회원가입
@@ -69,6 +70,7 @@ export default function NavBar({
             <button
               onClick={onLogout}
               className="h-9 min-w-[80px] px-4 rounded-md bg-white text-black
+                         flex items-center justify-center
                          hover:bg-gray-200 transition"
             >
               로그아웃
