@@ -1,56 +1,86 @@
 import axios from "axios";
+import type {
+  AxiosInstance,
+  InternalAxiosRequestConfig,
+  AxiosResponse,
+  AxiosError,
+} from "axios";
 
-const api = axios.create({
-  baseURL: "http://localhost:8080",
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+/**
+ * 🔹 기본 API 인스턴스 (JWT 인터셉터 적용)
+ */
+const api: AxiosInstance = axios.create({
+  baseURL: BASE_URL,
   withCredentials: true,
 });
 
-// 🔹 refresh api는 인터셉터를 타지 않는 별도 인스턴스
-const refreshApi = axios.create({
-  baseURL: "http://localhost:8080",
+/**
+ * 🔹 refresh 전용 인스턴스 (인터셉터 ❌)
+ */
+const refreshApi: AxiosInstance = axios.create({
+  baseURL: BASE_URL,
   withCredentials: true,
 });
 
-// 요청 인터셉터
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem("accessToken");
-  if (token) config.headers["Authorization"] = `Bearer ${token}`;
-  return config;
-});
+/**
+ * ======================
+ * 요청 인터셉터
+ * ======================
+ */
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = localStorage.getItem("accessToken");
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error: AxiosError) => Promise.reject(error)
+);
 
-// 응답 인터셉터
+/**
+ * ======================
+ * 응답 인터셉터
+ * ======================
+ */
 api.interceptors.response.use(
-  response => response,
+  (response: AxiosResponse) => response,
 
-  async error => {
-    const originalRequest = error.config;
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
-    // ⛔ refresh 요청에서 에러났을 때는 재시도하면 안됨
-    if (originalRequest.url.includes("/api/auth/refresh")) {
+    if (!originalRequest || !error.response) {
       return Promise.reject(error);
     }
 
-    // ⛔ 401에서만 refresh 시도 (403은 retry 절대 금지)
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // 🔴 refresh 요청 자체는 재시도 금지
+    if (originalRequest.url?.includes("/api/auth/refresh")) {
+      return Promise.reject(error);
+    }
+
+    // 🔴 401만 refresh 시도 (403은 보안상 재시도 ❌)
+    if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        // refresh는 별도 axios로 요청해야 함
-        const res = await refreshApi.post("/api/auth/refresh");
-        const newAccessToken = res.data;
+        const res: AxiosResponse<string> =
+          await refreshApi.post("/api/auth/refresh");
 
-        // 토큰 저장
+        const newAccessToken = res.data;
         localStorage.setItem("accessToken", newAccessToken);
 
-        // 재요청에 토큰 반영
-        originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization =
+            `Bearer ${newAccessToken}`;
+        }
 
         return api(originalRequest);
       } catch (refreshError) {
-        // 🔥 refresh 실패 → 완전히 로그인 해제된 상태
         localStorage.removeItem("accessToken");
-
-        // UI에 로그아웃 상태로 반영할 수 있도록 reject
         return Promise.reject(refreshError);
       }
     }
