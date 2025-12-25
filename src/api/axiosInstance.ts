@@ -12,7 +12,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL;
  * 🔹 기본 API 인스턴스 (JWT 인터셉터 적용)
  */
 const api: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: "https://mapmemo-production.up.railway.app",
   withCredentials: true,
 });
 
