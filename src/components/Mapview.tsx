@@ -263,11 +263,26 @@ export default function Mapview({
       <div ref={divRef} style={{ width: "100%", height: "100%" }} />
 
       <button
-        style={{ position: "absolute", top: 80, right: 20, zIndex: 1000 }}
-        onClick={handleNearbyToilets}
-      >
-        주변 화장실 찾기
-      </button>
+      onClick={handleNearbyToilets}
+      style={{
+        position: "absolute",
+        bottom: "24px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 1000,
+        padding: "10px 16px",
+        background: "white",
+        border: "1px solid #ddd",
+        borderRadius: "8px",
+        fontSize: "14px",
+        cursor: "pointer",
+        color: "black",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+      }}
+    >
+      주변 화장실 찾기
+    </button>
+
 
       {createPos && (
         <MemoCreateModal
